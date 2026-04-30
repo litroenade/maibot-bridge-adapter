@@ -12,6 +12,7 @@ DEFAULT_SUBSCRIPTIONS = [
     "maid.message.out",
     "maid.api.registry.*",
     "bridge.server.hello",
+    "maidbridge.server.*",
 ]
 DEFAULT_GATEWAY_MAX_HOPS = 8
 DEFAULT_REQUEST_TIMEOUT_MS = 30000

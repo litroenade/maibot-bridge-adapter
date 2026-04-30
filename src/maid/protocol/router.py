@@ -49,6 +49,7 @@ _CONTROL_EVENTS = frozenset(
     }
 )
 _DEFAULT_GATEWAY_MAX_HOPS = 8
+_SERVER_DIAGNOSTIC_PREFIX = "maidbridge.server."
 
 
 def route_envelope(envelope: BridgeEnvelope) -> RouteDecision:
@@ -65,7 +66,11 @@ def route_envelope(envelope: BridgeEnvelope) -> RouteDecision:
         return RouteDecision(kind="room_message", payload={})
     if envelope.type == "maid.agent.turn.request":
         return _route_maid_agent_turn(envelope)
-    if envelope.type in _AI_CHAIN_EVENTS or envelope.type in _CONTROL_EVENTS:
+    if (
+        envelope.type in _AI_CHAIN_EVENTS
+        or envelope.type in _CONTROL_EVENTS
+        or envelope.type.startswith(_SERVER_DIAGNOSTIC_PREFIX)
+    ):
         direction_error = _java_to_client_error(envelope)
         if direction_error is not None:
             return direction_error

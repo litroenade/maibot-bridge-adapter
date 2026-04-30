@@ -2,17 +2,17 @@
   "manifest_version": 2,
   "version": "0.1.0",
   "name": "maibot-bridge-adapter",
-  "description": "用于 TouhouLittleMaid AIChat 与 Minecraft 消息网关集成的 MaidBridge 适配器。",
+  "description": "多端适配器以及车万女仆mod接入适配",
   "author": {
     "name": "litroenade",
-    "url": "https://github.com/2829798842"
+    "url": "https://github.com/litroenade"
   },
   "license": "MIT",
   "urls": {
-    "repository": "https://github.com/Mai-with-u/MaiBot",
-    "homepage": "https://github.com/Mai-with-u/MaiBot",
-    "documentation": "https://github.com/Mai-with-u/MaiBot",
-    "issues": "https://github.com/Mai-with-u/MaiBot/issues"
+    "repository": "https://github.com/litroenade/maibot-bridge-adapter",
+    "homepage": "https://github.com/litroenade/maibot-bridge-adapter",
+    "documentation": "https://github.com/litroenade/maibot-bridge-adapter",
+    "issues": "https://github.com/litroenade/maibot-bridge-adapter/issues"
   },
   "host_application": {
     "min_version": "1.0.0",
