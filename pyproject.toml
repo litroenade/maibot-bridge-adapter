@@ -1,0 +1,9 @@
+[project]
+name = "maibot-bridge-adapter"
+version = "0.1.0"
+description = "MaiBot adapter for MaidBridge and TouhouLittleMaid AIChat bridge events"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "aiohttp>=3.9",
+]

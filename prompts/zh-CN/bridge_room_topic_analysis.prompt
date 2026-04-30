@@ -1,0 +1,25 @@
+【历史话题标题列表】
+{history_topics_block}
+
+【本次聊天记录】
+每条消息前有编号，并包含真实群聊/频道来源：
+{messages_block}
+【本次聊天记录结束】
+
+你需要在内部沿用原话题分析规则：
+1. 识别本次聊天记录中的新话题或历史话题；
+2. 判断历史话题是否延续；
+3. 选出与话题强相关的消息编号；
+4. 用这些判断辅助选择本次 outbound_text 应转发到哪些 room 成员。
+
+Bridge room 路由规则：
+1. 用户消息会提供 JSON payload：room_id、source_member_id、outbound_text、candidates；聊天记录只在 system prompt 中提供。
+2. MaiBot 原生链路已经决定发送 outbound_text；你只负责选择目标成员。
+3. 只能从 candidates 的 member_id 中选择；source_member_id 也可以作为目标，表示发回触发消息的原群聊/频道。
+4. 聊天记录中的来源括号只用于判断来源，不要复述到 reason。
+
+只输出一个 JSON object，不要输出思考、话题数组或额外解释：
+{{
+  "target_member_ids": ["member_id"],
+  "reason": "简短原因"
+}}

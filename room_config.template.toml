@@ -1,0 +1,25 @@
+# 复制这一段 [room] 到 config.toml，然后按需自建 rooms/members。
+# room 只用于 QQ/Discord/Maid 多成员聚合。
+# room 出站路由固定由 MaiBot 生成出站消息后再由 LLM 选择目标成员。
+# session_platform 可选；未配置时使用第一个非 maid 成员平台作为原生 MaiBot room 会话平台。
+# 这里不能填写 maidbridge_room，因为它不是 MaiBot 已配置机器人账号的平台。
+#
+# 成员平台：
+# - qq: QQ 群，channel_id 填 QQ 群号。
+# - discord: Discord 频道，channel_id 填 Discord 频道 ID。
+# - maid: Minecraft 女仆端，channel_id 填女仆频道；还需要 maid_uuid 或 maid_entity_id 定位目标女仆实体。
+#
+# QQ 出站会先尝试已声明的 NapCat 适配器 API，再回退到 SDK stream 发送。
+# QQ 成员可配置 adapter_api 和 adapter_api_version 覆盖默认 NapCat API 候选，
+# 不需要改变 platform/channel_id。
+[room]
+enable_room_gate = true
+rooms = [
+    { id = "main-bridge", name = "Main Bridge", session_platform = "discord", members = [
+        { platform = "qq", channel_id = "123456789" },
+        # 自定义 QQ 直发 API 示例：
+        # { platform = "qq", channel_id = "123456789", adapter_api = "adapter.custom.qq.group_text", adapter_api_version = "v1" },
+        { platform = "discord", channel_id = "111111111111111111" },
+        { platform = "maid", channel_id = "1593201413", maid_uuid = "00000000-0000-0000-0000-000000000000" },
+    ] },
+]

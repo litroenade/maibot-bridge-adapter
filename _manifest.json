@@ -1,0 +1,48 @@
+{
+  "manifest_version": 2,
+  "version": "0.1.0",
+  "name": "maibot-bridge-adapter",
+  "description": "用于 TouhouLittleMaid AIChat 与 Minecraft 消息网关集成的 MaidBridge 适配器。",
+  "author": {
+    "name": "litroenade",
+    "url": "https://github.com/2829798842"
+  },
+  "license": "MIT",
+  "urls": {
+    "repository": "https://github.com/Mai-with-u/MaiBot",
+    "homepage": "https://github.com/Mai-with-u/MaiBot",
+    "documentation": "https://github.com/Mai-with-u/MaiBot",
+    "issues": "https://github.com/Mai-with-u/MaiBot/issues"
+  },
+  "host_application": {
+    "min_version": "1.0.0",
+    "max_version": "1.0.0"
+  },
+  "sdk": {
+    "min_version": "2.0.0",
+    "max_version": "2.99.99"
+  },
+  "dependencies": [
+    {
+      "type": "python_package",
+      "name": "aiohttp",
+      "version_spec": ">=3.9"
+    }
+  ],
+  "capabilities": [
+    "llm.generate",
+    "llm.generate_with_tools",
+    "api.call",
+    "api.list",
+    "chat.get_stream_by_group_id",
+    "send.text"
+  ],
+  "i18n": {
+    "default_locale": "zh-CN",
+    "supported_locales": [
+      "zh-CN",
+      "en-US"
+    ]
+  },
+  "id": "maibot-bridge-adapter"
+}
