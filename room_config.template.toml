@@ -15,7 +15,7 @@
 [room]
 enable_room_gate = true
 rooms = [
-    { id = "main-bridge", name = "Main Bridge", session_platform = "discord", members = [
+    { id = "main-bridge", name = "主桥接房间", session_platform = "discord", members = [
         { platform = "qq", channel_id = "123456789" },
         # 自定义 QQ 直发 API 示例：
         # { platform = "qq", channel_id = "123456789", adapter_api = "adapter.custom.qq.group_text", adapter_api_version = "v1" },

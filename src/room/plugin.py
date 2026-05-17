@@ -354,7 +354,7 @@ class MaidBridgeRoomPlugin:
             )
             resolved_target_member_ids = policy.target_member_ids
             room_decision: dict[str, Any] | None = None
-            if settings.enable_room_llm_decision and policy.use_llm_decision:
+            if policy.use_llm_decision:
                 decision = await asyncio.wait_for(
                     self._room_decision_service(settings=settings).decide(
                         runtime=runtime,
@@ -382,10 +382,7 @@ class MaidBridgeRoomPlugin:
             return {"success": False, "error": str(exc), "room_id": room_id}
         delivery = RoomDelivery(
             ctx=self.ctx,
-            state=self._state,
-            transport=self._transport,
             settings=self._settings(),
-            send_envelope_await_reply=self._send_envelope_await_reply,
         )
         return await delivery.deliver_plan(plan, text=text)
 
@@ -495,10 +492,7 @@ class MaidBridgeRoomPlugin:
     ) -> None:
         delivery = RoomDelivery(
             ctx=self.ctx,
-            state=self._state,
-            transport=self._transport,
             settings=self._settings(),
-            send_envelope_await_reply=self._send_envelope_await_reply,
         )
         result = await delivery.deliver_plan(plan, text=text)
         self._log_room_outbound_extra_result(
@@ -511,10 +505,7 @@ class MaidBridgeRoomPlugin:
     async def _deliver_bridge_only_room_targets(self, plan: dict[str, Any], *, text: str) -> dict[str, Any]:
         delivery = RoomDelivery(
             ctx=self.ctx,
-            state=self._state,
-            transport=self._transport,
             settings=self._settings(),
-            send_envelope_await_reply=self._send_envelope_await_reply,
         )
         return await delivery.deliver_plan(plan, text=text)
 

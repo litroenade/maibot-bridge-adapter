@@ -1,9 +1,5 @@
 from collections.abc import Awaitable, Callable
 from typing import Any
-from uuid import uuid4
-
-from ..constants import CLIENT_TO_JAVA
-from ..maid.protocol.envelope import build_ai_event_envelope
 
 
 class RoomDelivery:
@@ -11,16 +7,14 @@ class RoomDelivery:
         self,
         *,
         ctx: Any,
-        state: Any,
-        transport: Any,
         settings: Any,
-        send_envelope_await_reply: Callable[..., Awaitable[dict[str, Any]]],
+        state: Any = None,
+        transport: Any = None,
+        send_envelope_await_reply: Callable[..., Awaitable[dict[str, Any]]] | None = None,
     ) -> None:
+        del state, transport, send_envelope_await_reply
         self._ctx = ctx
-        self._state = state
-        self._transport = transport
         self._settings = settings
-        self._send_envelope_await_reply = send_envelope_await_reply
 
     async def deliver_plan(self, plan: dict[str, Any], *, text: str) -> dict[str, Any]:
         delivery_results = []
@@ -44,45 +38,10 @@ class RoomDelivery:
         }
 
     async def _deliver_maidbridge_target(self, target: dict[str, Any]) -> dict[str, Any]:
-        if not self._state.ready:
-            return _delivery_failure(target, "MaidBridge transport is not connected")
-        if self._transport is None:
-            return _delivery_failure(target, "MaidBridge transport send loop is not active")
-        frame = target["frame"]
-        request_id = f"room-{uuid4()}"
-        envelope = build_ai_event_envelope(
-            event_type=frame["type"],
-            event_id=request_id,
-            request_id=request_id,
-            trace_id=f"trace-{uuid4()}",
-            server_id=str(frame.get("server_id") or self._settings.server_id),
-            endpoint_id=frame["endpoint_id"],
-            payload=frame["payload"],
-            deadline_ms=self._settings.request_timeout_ms,
-            maid_uuid=frame.get("maid_uuid", ""),
-            maid_entity_id=frame.get("maid_entity_id", ""),
-            direction=frame.get("direction", CLIENT_TO_JAVA),
-        )
-        reply = await self._send_envelope_await_reply(envelope, settings=self._settings)
-        payload = reply["payload"]
-        if reply["type"] == "bridge.ack" and payload.get("ok", True):
-            return {
-                "member_id": target["member_id"],
-                "platform": target["platform"],
-                "platform_label": target["platform_label"],
-                "success": True,
-                "external_message_id": envelope.id,
-                "trace_id": envelope.trace_id,
-                "ack": payload,
-            }
-        return {
-            "member_id": target["member_id"],
-            "platform": target["platform"],
-            "platform_label": target["platform_label"],
-            "success": False,
-            "trace_id": envelope.trace_id,
-            "error": str(payload.get("error") or "MaidBridge room send was rejected"),
-        }
+        adapter_result = await self._deliver_adapter_api_target(target)
+        if adapter_result is not None:
+            return adapter_result
+        return _delivery_failure(target, "maibot-maid-adapter.maid_message API is unavailable")
 
     async def _deliver_sdk_target(self, target: dict[str, Any], *, text: str) -> dict[str, Any]:
         adapter_result = await self._deliver_adapter_api_target(target)
@@ -173,14 +132,19 @@ async def _visible_adapter_api_names(list_api: Callable[[], Any]) -> set[str]:
     if not isinstance(raw_items, list | tuple | set):
         return names
     for item in raw_items:
+        full_name = ""
         if isinstance(item, str):
             name = item.strip()
         elif isinstance(item, dict):
             name = str(item.get("name") or item.get("api_name") or "").strip()
+            full_name = str(item.get("full_name") or "").strip()
         else:
             name = str(getattr(item, "name", "") or getattr(item, "api_name", "")).strip()
+            full_name = str(getattr(item, "full_name", "") or "").strip()
         if name:
             names.add(name)
+        if full_name:
+            names.add(full_name)
     return names
 
 
@@ -276,6 +240,11 @@ def _adapter_api_result_error(result: Any, *, api_name: str) -> str:
         return "" if result else f"{api_name}: empty result"
     if result.get("success") is False or result.get("ok") is False:
         return str(result.get("error") or result.get("message") or f"{api_name}: returned error")
+    nested_result = result.get("result")
+    if isinstance(nested_result, dict):
+        nested_error = _adapter_api_result_error(nested_result, api_name=api_name)
+        if nested_error:
+            return nested_error
     if result.get("error"):
         return str(result["error"])
     return ""

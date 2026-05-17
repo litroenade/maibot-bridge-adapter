@@ -2,12 +2,12 @@
   "manifest_version": 2,
   "version": "0.1.0",
   "name": "maibot-bridge-adapter",
-  "description": "多端适配器以及车万女仆mod接入适配",
+  "description": "MaiBot 跨平台桥接房间路由插件",
   "author": {
     "name": "litroenade",
     "url": "https://github.com/litroenade"
   },
-  "license": "MIT",
+  "license": "GPL-v3.0",
   "urls": {
     "repository": "https://github.com/litroenade/maibot-bridge-adapter",
     "homepage": "https://github.com/litroenade/maibot-bridge-adapter",
@@ -15,23 +15,16 @@
     "issues": "https://github.com/litroenade/maibot-bridge-adapter/issues"
   },
   "host_application": {
-    "min_version": "1.0.0",
-    "max_version": "1.0.0"
+    "min_version": "0.0.0",
+    "max_version": "0.0.0"
   },
   "sdk": {
     "min_version": "2.0.0",
     "max_version": "2.99.99"
   },
-  "dependencies": [
-    {
-      "type": "python_package",
-      "name": "aiohttp",
-      "version_spec": ">=3.9"
-    }
-  ],
+  "dependencies": [],
   "capabilities": [
     "llm.generate",
-    "llm.generate_with_tools",
     "api.call",
     "api.list",
     "chat.get_stream_by_group_id",

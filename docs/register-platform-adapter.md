@@ -1,24 +1,20 @@
 # 注册新的 Room 平台适配器
 
-Room 平台适配器把某个平台的配置、入站匹配和出站投递意图收敛到一个类里。新增平台时，优先扩展 adapter，不要把平台判断写进 `RoomRuntime`、`RoomDelivery` 或 hook 流程。
-
-## 文件位置
-
-新增文件放在：
+Room 平台适配器把单个平台的成员配置、入站匹配和出站投递意图集中放在一个文件里。新增平台放在：
 
 ```text
 src/room/platforms/adapters/<platform>.py
 ```
 
-现有示例：
+当前内置平台：
 
-- `discord.py`: Discord 频道，优先走 adapter API，失败时可回退 SDK stream。
-- `qq.py`: QQ 群，优先走 NapCat/OneBot API，失败时回退 SDK stream。
-- `maid.py`: Minecraft 女仆端，生成 `maid.message.in` frame，交给 MaidBridge WebSocket 投递。
+- `qq.py`：QQ 群投递，优先使用 NapCat/OneBot 适配器 API，失败后回退到 SDK stream。
+- `discord.py`：Discord 频道投递，优先使用 Discord 适配器 API，失败后回退到 SDK stream。
+- `maid.py`：Minecraft 女仆成员投递。它只构造 `maid.message.in` 投递意图，真正发送委托给 `maibot-maid-adapter.maid_message`；本 room 插件不维护 MaidBridge WebSocket 状态。
 
-## 实现接口
+## 适配器契约
 
-新平台类需要实现 `RoomPlatformAdapter` 约定的方法：
+实现 `RoomPlatformAdapter` 协议：
 
 ```python
 from typing import Any, Mapping
@@ -29,7 +25,7 @@ from ..common import require_id
 
 class ExamplePlatformAdapter:
     key = "example"
-    label = "Example"
+    label = "示例平台"
     delivery = "sdk"
 
     def parse_endpoint(self, raw_member: Mapping[str, Any], default_server_id: str) -> dict[str, Any]:
@@ -40,7 +36,7 @@ class ExamplePlatformAdapter:
         return f"example:{endpoint['channel_id']}"
 
     def default_display_name(self, endpoint: Mapping[str, Any]) -> str:
-        return f"Example:{endpoint['channel_id']}"
+        return f"示例平台:{endpoint['channel_id']}"
 
     def host_match_score(self, platform: str, endpoint: Mapping[str, Any], route_ids: set[str]) -> int:
         if platform != self.key:
@@ -63,27 +59,27 @@ class ExamplePlatformAdapter:
         return OutboundIntent(delivery="sdk", frame=frame, sdk_streams=(("example", channel_id),))
 ```
 
-`parse_endpoint` 负责把 `config.toml` 里的 member 配置转成稳定 endpoint。这里应使用 `require_id`、`optional_id`、`reject_present` 做校验，尽早拒绝含糊配置。
+`parse_endpoint` 负责校验单个 `config.toml` room member。优先使用 `require_id`、`optional_id` 和 `reject_present`，让错误配置尽早失败。
 
-`default_member_id` 要返回稳定 ID，例如 `discord:<channel_id>`、`qq:<group_id>`。这个 ID 会被 room 决策、日志和 API 使用，不应包含临时消息 ID。
+`default_member_id` 必须返回稳定 ID，例如 `discord:<channel_id>` 或 `qq:<group_id>`。不要把临时消息 ID 放进去。
 
-`host_match_score` 用于入站消息匹配 room member。返回 `0` 表示不匹配，数值越高优先级越高。只做平台端点匹配，不要在这里修改消息。
+`host_match_score` 只负责判断入站 host 消息是否属于某个已配置 endpoint。返回 `0` 表示不匹配，分数越高优先级越高。这里不要修改消息。
 
-`build_outbound_intent` 返回 `OutboundIntent`。它描述如何投递，不直接发消息。
+`build_outbound_intent` 只描述 room 消息应该如何投递，不能直接发送消息。
 
 ## 投递类型
 
-`delivery="sdk"` 适合 QQ、Discord 这类 MaiBot 已有平台。`OutboundIntent` 可以带：
+`delivery = "sdk"` 用于 MaiBot SDK 已经能触达的平台。`OutboundIntent` 可以包含：
 
-- `frame`: 标准化后的目标帧，用于日志和调试。
-- `sdk_streams`: SDK 回退路径，例如 `("discord", channel_id)`。
-- `adapter_apis`: 优先调用的外部适配器 API 候选。
+- `frame`：规范化调试快照。
+- `sdk_streams`：SDK 兜底 stream 查找参数，例如 `("discord", channel_id)`。
+- `adapter_apis`：优先尝试的直发适配器 API 候选。
 
-`delivery="bridge"` 适合 MaidBridge 这种插件自带 transport 的目标。此时 `RoomDelivery` 会把 `frame` 交给 MaidBridge 发送路径。
+`delivery = "bridge"` 目前保留给女仆 room 成员。room 插件仍把它视为桥接目标，但实际投递会通过 `adapter_apis` 委托给 `maibot-maid-adapter.maid_message`。不要在这个插件里再加第二套 MaidBridge WebSocket runtime。
 
 ## 注册入口
 
-在 `src/room/platforms/adapters/__init__.py` 导入并加入 `BUILTIN_PLATFORM_ADAPTERS`：
+导入适配器，并把实例加入 `src/room/platforms/adapters/__init__.py` 的 `BUILTIN_PLATFORM_ADAPTERS`：
 
 ```python
 from .example import ExamplePlatformAdapter
@@ -96,24 +92,4 @@ BUILTIN_PLATFORM_ADAPTERS = (
 )
 ```
 
-`src/room/platforms/__init__.py` 会在导入时调用 `register_builtin_platforms()`，因此业务代码只通过 registry 访问平台能力。
-
-## 配置示例
-
-平台 member 写在 `[room].rooms[].members`：
-
-```toml
-[room]
-enable_room_gate = true
-rooms = [
-    { id = "main-bridge", name = "Main Bridge", members = [
-        { platform = "example", channel_id = "123456" },
-    ] },
-]
-```
-
-字段名应尽量保持业务含义稳定。比如群、频道统一用 `channel_id`；特殊字段只在 adapter 内解释。
-
-## 边界约定
-
-如果新增平台需要真实网络发送，优先通过该平台自己的 MaiBot adapter API 暴露直发能力，然后在 `adapter_apis` 里声明调用候选。
+`src/room/platforms/__init__.py` 会在 import 时注册内置平台，业务代码应通过 registry 取适配器，不要直接 import 具体适配器。

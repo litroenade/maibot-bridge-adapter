@@ -103,4 +103,21 @@ class MaidPlatformAdapter:
                 },
             },
         }
-        return OutboundIntent(delivery="bridge", frame=frame)
+        return OutboundIntent(
+            delivery="bridge",
+            frame=frame,
+            adapter_apis=(
+                {
+                    "api_name": "maibot-maid-adapter.maid_message",
+                    "version": "1",
+                    "kwargs": {
+                        "text": text,
+                        "room_id": room_id,
+                        "source_member_id": source_member_id,
+                        "channel_id": channel_id,
+                        "maid_uuid": maid_uuid,
+                        "maid_entity_id": maid_entity_id,
+                    },
+                },
+            ),
+        )
